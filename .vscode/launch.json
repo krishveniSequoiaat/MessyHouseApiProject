@@ -1,0 +1,45 @@
+{
+  "version": "0.2.0",
+  "compounds": [
+    {
+      "name": "Launch API + UI",
+      "configurations": ["API", "UI"]
+    }
+  ],
+  "configurations": [
+    {
+      "name": "API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/MessyHouse.API/bin/Debug/net8.0/MessyHouse.API.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/MessyHouse.API",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "DOTNET_USE_POLLING_FILE_WATCHER": "1"
+      }
+    },
+    {
+      "name": "UI",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/MessyHouse.UI/bin/Debug/net8.0/MessyHouse.UI.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/MessyHouse.UI",
+      "stopAtEntry": false,
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "env": {
+        "DOTNET_USE_POLLING_FILE_WATCHER": "1"
+      }
+    }
+  ]
+}

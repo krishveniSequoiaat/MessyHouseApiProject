@@ -1,0 +1,33 @@
+<div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addItemModalLabel">Add New Item</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addItemForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Upload Image</label>
+                        <input type="file" class="form-control" id="itemImage" name="image" accept="image/*" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="itemName" class="form-label">Item Name</label>
+                        <input type="text" class="form-control" id="itemName" name="name" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="itemTag" class="form-label">Tags</label>
+                        <input type="text" class="form-control" id="itemTag" name="tag" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="itemBarcode" class="form-label">Barcode</label>
+                        <select name="barcode" id="boxBarcodeSelect" class="form-control" required>
+                            <option value="">--Select Storage box--</option>
+                        </select>
+                    </div>
+                    <button type="submit" id="saveItemBtn" class="btn btn-primary">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

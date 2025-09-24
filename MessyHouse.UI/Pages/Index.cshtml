@@ -1,0 +1,181 @@
+﻿@page
+@model IndexModel
+
+<div class="mb-3">
+    <h2>Messy House Items</h2>
+
+    <button class="btn btn-primary mr-2" id="addItemBtn" data-bs-toggle="modal" data-bs-target="#addItemModal">
+        + Add Item
+    </button>
+    <button class="btn btn-primary mr-2" id="addStorageBoxBtn" data-bs-toggle="modal" data-bs-target="#addStorageBoxModal">
+        + Add Storage Box
+    </button>
+</div>
+
+<!-- Tabs -->
+<ul class="nav nav-tabs" id="mainTabs">
+    <li class="nav-item">
+        <a class="nav-link active" id="items-tab" data-bs-toggle="tab" href="#items">Inventory</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" id="boxes-tab" data-bs-toggle="tab" href="#boxes">Storage Boxes</a>
+    </li>
+    
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="items">
+        <table id="itemsTable" class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Barcode</th>
+                    <th>Tag</th>
+                    <th>Image</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>        
+    </div>
+    <div class="tab-pane fade" id="boxes">
+        <table id="storageBoxTable" class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Location</th>
+                    <th>Barcode</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Include partial -->
+<partial name="Partials/_AddItem" />
+<partial name="Partials/_AddStorageBox" />
+
+@section Scripts {
+<script>
+    const apiBaseUrl = "http://localhost:5223"; 
+    
+    function loadStorageBoxes() {
+        $.get(apiBaseUrl + "/storageboxes", function (data) {
+            let rows = "";
+            data.forEach(box => {
+                rows += `<tr>
+                            <td>${box.id}</td>
+                            <td>${box.name}</td>
+                            <td>${box.location}</td>
+                            <td>${box.barcode}</td>
+                         </tr>`;
+            });
+            $("#storageBoxTable tbody").html(rows);
+        });
+    }
+
+
+    function loadItems() {
+        $.getJSON(apiBaseUrl + "/items", function (data) {
+            let rows = "";
+            $.each(data, function (i, item) {
+                rows += `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td>${item.name}</td>
+                        <td>${item.barcode}</td>
+                        <td>${item.tag}</td>
+                        <td>${item.imageUrl 
+                            ? `<img src="${item.imageUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;"/>` 
+                            : "No Image"}
+                        </td>
+                    </tr>`;
+            });
+            $("#itemsTable tbody").html(rows);
+        });
+    }
+
+    function generateBarcode() {
+        const random = Math.floor(10000000 + Math.random() * 90000000); 
+        return `BOX-${random}`;
+    }
+
+    function loadStorageBoxOptions() {
+        $.get(apiBaseUrl + "/storageboxes", function (data) {
+            let options = '<option value="">--Select Storage box--</option>';
+            data.forEach(box => {
+                options += `<option value="${box.barcode}">${box.name} (${box.location})</option>`;
+            });
+            $("#boxBarcodeSelect").html(options);
+        });
+    }
+
+
+    $(document).ready(function () {  
+        loadItems();
+
+        $('#items-tab').on('shown.bs.tab', function() {loadItems() });
+        $('#boxes-tab').on('shown.bs.tab', function() {loadStorageBoxes() });
+        
+
+        $("#saveItemBtn").on("click", function (event) {
+            event.preventDefault();
+            var formData = new FormData($("#addItemForm")[0]);
+
+            $.ajax({
+                url: apiBaseUrl + "/items",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    alert("Item added successfully");
+                    $("#addItemModal").modal("hide");
+                    $("#addItemForm")[0].reset();
+                    loadItems();
+                },
+                error: function (xhr) {
+                    alert("Error: " + xhr.responseText);
+                }
+            });
+        });
+
+
+        $("#saveStorageBoxBtn").click(function () {
+            event.preventDefault();
+            var formData = new FormData($("#addStorageBoxForm")[0]);
+            alert("FormData prepared");
+
+            $.ajax({
+                url: apiBaseUrl + "/storageboxes",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    $("#addStorageBoxModal").modal("hide");
+                    $("#addStorageBoxForm")[0].reset();
+                    loadStorageBoxes();
+                },
+                error: function (xhr) {
+                    alert("Error: " + xhr.responseText);
+                }
+            });
+        });
+
+        $("#addStorageBoxBtn").click(() => {
+            // Generate a new random barcode each time modal opens
+            $("#boxBarcode").val(generateBarcode());
+            $("#addStorageBoxModal").modal("show");
+        });
+
+        $("#addItemBtn").click(() => {
+            loadStorageBoxOptions();
+            $("#addItemModal").modal("show");
+        });
+
+    });
+</script>
+}
