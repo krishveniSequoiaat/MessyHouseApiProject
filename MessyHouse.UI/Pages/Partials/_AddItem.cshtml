@@ -7,20 +7,25 @@
             </div>
             <div class="modal-body">
                 <form id="addItemForm" enctype="multipart/form-data">
-                    <div class="mb-3">
-                        <label class="form-label">Upload Image</label>
-                        <input type="file" class="form-control" id="itemImage" name="image" accept="image/*" required />
+                    <div class="mb-3 form-group">
+                        <label class="form-label">Item Photo</label>
+                        <input type="file" class="form-control" id="mobileCameraInput" name="image" accept="image/*"  capture="environment" style="display:none;" required />
+                        <div id="desktopCameraArea" style="display:none;">
+                            <video id="video" width="320" height="240" autoplay></video>
+                            <button type="button" id="captureBtn" class="btn btn-secondary mt-2">Capture Photo</button>
+                            <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+                        </div>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-3 form-group">
                         <label for="itemName" class="form-label">Item Name</label>
                         <input type="text" class="form-control" id="itemName" name="name" required />
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-3 form-group">
                         <label for="itemTag" class="form-label">Tags</label>
                         <input type="text" class="form-control" id="itemTag" name="tag" required />
                     </div>
-                    <div class="mb-3">
-                        <label for="itemBarcode" class="form-label">Barcode</label>
+                    <div class="mb-3 form-group">
+                        <label for="itemBarcode" class="form-label">Where do you want to Store?</label>
                         <select name="barcode" id="boxBarcodeSelect" class="form-control" required>
                             <option value="">--Select Storage box--</option>
                         </select>

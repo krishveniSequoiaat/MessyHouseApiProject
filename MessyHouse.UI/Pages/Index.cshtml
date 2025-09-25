@@ -142,9 +142,13 @@
         });
     }
 
+    function IsMobileDevice() {
+        return /Mobi|Android/i.test(navigator.userAgent);
+    }
+
 
     $(document).ready(function () {  
-        loadItems();
+        loadItems();       
 
         $('#items-tab').on('shown.bs.tab', function() {loadItems() });
         $('#boxes-tab').on('shown.bs.tab', function() {loadStorageBoxes() });
@@ -153,6 +157,10 @@
         $("#saveItemBtn").on("click", function (event) {
             event.preventDefault();
             var formData = new FormData($("#addItemForm")[0]);
+
+            if(!IsMobileDevice() && capturedBlob) {
+                formData.set('image', capturedBlob, 'captured.jpg');
+            }
 
             $.ajax({
                 url: apiBaseUrl + "/items",
@@ -165,6 +173,8 @@
                     $("#addItemModal").modal("hide");
                     $("#addItemForm")[0].reset();
                     loadItems();
+                    capturedBlob = null;
+                    $('#canvas').hide();
                 },
                 error: function (xhr) {
                     alert("Error: " + xhr.responseText);
@@ -214,6 +224,47 @@
             } else if ($('#boxes-tab').hasClass('active')) {
                 filterStorageBoxes(query);
             }
+        });
+
+        let capturedBlob = null;
+
+        if(IsMobileDevice()) {
+            $("#mobileCameraInput").show();
+            $("#desktopCameraArea").hide();
+        } else {
+            $("#mobileCameraInput").hide();
+            $("#desktopCameraArea").show();
+
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const captureBtn = document.getElementById('captureBtn');
+            const context = canvas.getContext('2d');
+
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    video.srcObject = stream;
+                })
+                .catch(err => {
+                    console.error("Error accessing camera: ", err);
+                });
+
+            captureBtn.addEventListener('click', () => {
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                canvas.toBlob(blob => {
+                    capturedBlob = blob;
+                }, 'image/jpeg');
+            });
+        }
+
+        $('#addItemModal').on('hidden.bs.modal', function () {
+            $('#addItemForm')[0].reset();
+            capturedBlob = null;
+            $('#canvas').hide();
+
+        });
+
+        $('#addStorageBoxModalLabel').on('hidden.bs.modal', function () {
+            $('#addStorageBoxForm')[0].reset();
         });
 
     });
