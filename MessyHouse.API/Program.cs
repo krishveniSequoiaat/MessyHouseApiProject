@@ -46,6 +46,7 @@ app.MapPost("/storageboxes", async (HttpRequest request, AppDbContext dbContext)
     var location = form["Location"].ToString();
     var storageBox = new StorageBox
     {
+        Name = name,
         Barcode = barcode,
         Location = location
     };
@@ -132,29 +133,41 @@ app.MapGet("/storageboxes", async (AppDbContext dbContext) =>
 
 //get items with tags or name or barcode   
 
-app.MapGet("/items/search", async (string? tag, string? barcode, AppDbContext dbContext) =>
+app.MapGet("/items/search", async (string? search, AppDbContext dbContext) =>
 {
-    if (string.IsNullOrEmpty(tag) && string.IsNullOrEmpty(barcode))
-    {
-        return Results.BadRequest("At least one query parameter (tag or barcode) must be provided.");
-    }
     var query = dbContext.Items.AsQueryable();
-    if (!string.IsNullOrEmpty(tag))
+    if (!string.IsNullOrEmpty(search))
     {
-        query = query.Where(i => i.Tag.ToLower().Contains(tag.ToLower()) || i.Name.ToLower().Contains(tag.ToLower()));
-    }
-    if (!string.IsNullOrEmpty(barcode))
-    {
-        query = query.Where(i => i.Barcode == barcode);
+        search = search.ToLower();
+        query = query.Where(i => i.Tag.ToLower().Contains(search) || i.Name.ToLower().Contains(search));
     }
     var items = await query.ToListAsync();
+
     if (items == null || items.Count == 0)
     {
         return Results.NotFound();
     }
     return Results.Ok(items);
 })
-.WithName("SearchItemsByTagOrBarcode");
+.WithName("SearchItems");
+
+app.MapGet("/storageboxes/search", async (string? search, AppDbContext dbContext) =>
+{
+    var query = dbContext.StorageBoxes.AsQueryable();
+    if (!string.IsNullOrEmpty(search))
+    {
+        search = search.ToLower();
+        query = query.Where(i => i.Name.ToLower().Contains(search) || i.Location.ToLower().Contains(search));
+    }
+    var items = await query.ToListAsync();
+
+    if (items == null || items.Count == 0)
+    {
+        return Results.NotFound();
+    }
+    return Results.Ok(items);
+})
+.WithName("SearchStorageBoxes");
 
 //update items to another storage box
 app.MapPut("/item/{id}/move/{newStorageBarcode}", async (int id, string newStorageBarcode, AppDbContext dbContext) =>

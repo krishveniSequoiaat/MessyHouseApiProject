@@ -2,7 +2,7 @@
 @model IndexModel
 
 <div class="mb-3">
-    <h2>Messy House Items</h2>
+    <h2>House Organizer</h2>
 
     <button class="btn btn-primary mr-2" id="addItemBtn" data-bs-toggle="modal" data-bs-target="#addItemModal">
         + Add Item
@@ -10,6 +10,10 @@
     <button class="btn btn-primary mr-2" id="addStorageBoxBtn" data-bs-toggle="modal" data-bs-target="#addStorageBoxModal">
         + Add Storage Box
     </button>
+</div>
+
+<div class="mb-3">
+    <input type="text" id="searchInput" class="form-control" placeholder="Search..." />   
 </div>
 
 <!-- Tabs -->
@@ -112,6 +116,32 @@
         });
     }
 
+    function filterItems(query) {
+        $("#itemsTable tbody tr").each(function() {
+            const itemName = $(this).find("td:nth-child(2)").text().toLowerCase();
+            const itemTag = $(this).find("td:nth-child(4)").text().toLowerCase();
+            const barcode = $(this).find("td:nth-child(3)").text().toLowerCase();
+            if (itemName.includes(query) || itemTag.includes(query) || barcode.includes(query)) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    }
+
+    function filterStorageBoxes(query) {
+        $("#storageBoxTable tbody tr").each(function() {
+            const boxName = $(this).find("td:nth-child(2)").text().toLowerCase();
+            const boxLocation = $(this).find("td:nth-child(3)").text().toLowerCase();
+            const barcode = $(this).find("td:nth-child(4)").text().toLowerCase();
+            if (boxName.includes(query) || boxLocation.includes(query) || barcode.includes(query)) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    }
+
 
     $(document).ready(function () {  
         loadItems();
@@ -174,6 +204,16 @@
         $("#addItemBtn").click(() => {
             loadStorageBoxOptions();
             $("#addItemModal").modal("show");
+        });
+
+        
+        $("#searchInput").on('keyup', function() {
+            const query = $(this).val().toLowerCase();
+            if ($('#items-tab').hasClass('active')) {
+                filterItems(query);
+            } else if ($('#boxes-tab').hasClass('active')) {
+                filterStorageBoxes(query);
+            }
         });
 
     });
