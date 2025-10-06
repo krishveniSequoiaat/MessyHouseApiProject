@@ -7,13 +7,14 @@
     <button class="btn btn-primary mr-2" id="addItemBtn" data-bs-toggle="modal" data-bs-target="#addItemModal">
         + Add Item
     </button>
-    <button class="btn btn-primary mr-2" id="addStorageBoxBtn" data-bs-toggle="modal" data-bs-target="#addStorageBoxModal">
+    <button class="btn btn-primary mr-2" id="addStorageBoxBtn" data-bs-toggle="modal"
+        data-bs-target="#addStorageBoxModal">
         + Add Storage Box
     </button>
 </div>
 
 <div class="mb-3">
-    <input type="text" id="searchInput" class="form-control" placeholder="Search..." />   
+    <input type="text" id="searchInput" class="form-control" placeholder="Search..." />
 </div>
 
 <!-- Tabs -->
@@ -24,7 +25,7 @@
     <li class="nav-item">
         <a class="nav-link" id="boxes-tab" data-bs-toggle="tab" href="#boxes">Storage Boxes</a>
     </li>
-    
+
 </ul>
 
 <div class="tab-content">
@@ -40,7 +41,7 @@
                 </tr>
             </thead>
             <tbody></tbody>
-        </table>        
+        </table>
     </div>
     <div class="tab-pane fade" id="boxes">
         <table id="storageBoxTable" class="table table-bordered">
@@ -62,211 +63,211 @@
 <partial name="Partials/_AddStorageBox" />
 
 @section Scripts {
-<script>
-    const apiBaseUrl = "http://localhost:5223"; 
-    
-    function loadStorageBoxes() {
-        $.get(apiBaseUrl + "/storageboxes", function (data) {
-            let rows = "";
-            data.forEach(box => {
-                rows += `<tr>
-                            <td>${box.id}</td>
-                            <td>${box.name}</td>
-                            <td>${box.location}</td>
-                            <td>${box.barcode}</td>
-                         </tr>`;
-            });
-            $("#storageBoxTable tbody").html(rows);
-        });
-    }
+    <script>
+        const apiBaseUrl = "http://localhost:5223";
 
-
-    function loadItems() {
-        $.getJSON(apiBaseUrl + "/items", function (data) {
-            let rows = "";
-            $.each(data, function (i, item) {
-                rows += `
-                    <tr>
-                        <td>${item.id}</td>
-                        <td>${item.name}</td>
-                        <td>${item.barcode}</td>
-                        <td>${item.tag}</td>
-                        <td>${item.imageUrl 
-                            ? `<img src="${item.imageUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;"/>` 
-                            : "No Image"}
-                        </td>
-                    </tr>`;
-            });
-            $("#itemsTable tbody").html(rows);
-        });
-    }
-
-    function generateBarcode() {
-        const random = Math.floor(10000000 + Math.random() * 90000000); 
-        return `BOX-${random}`;
-    }
-
-    function loadStorageBoxOptions() {
-        $.get(apiBaseUrl + "/storageboxes", function (data) {
-            let options = '<option value="">--Select Storage box--</option>';
-            data.forEach(box => {
-                options += `<option value="${box.barcode}">${box.name} (${box.location})</option>`;
-            });
-            $("#boxBarcodeSelect").html(options);
-        });
-    }
-
-    function filterItems(query) {
-        $("#itemsTable tbody tr").each(function() {
-            const itemName = $(this).find("td:nth-child(2)").text().toLowerCase();
-            const itemTag = $(this).find("td:nth-child(4)").text().toLowerCase();
-            const barcode = $(this).find("td:nth-child(3)").text().toLowerCase();
-            if (itemName.includes(query) || itemTag.includes(query) || barcode.includes(query)) {
-                $(this).show();
-            } else {
-                $(this).hide();
-            }
-        });
-    }
-
-    function filterStorageBoxes(query) {
-        $("#storageBoxTable tbody tr").each(function() {
-            const boxName = $(this).find("td:nth-child(2)").text().toLowerCase();
-            const boxLocation = $(this).find("td:nth-child(3)").text().toLowerCase();
-            const barcode = $(this).find("td:nth-child(4)").text().toLowerCase();
-            if (boxName.includes(query) || boxLocation.includes(query) || barcode.includes(query)) {
-                $(this).show();
-            } else {
-                $(this).hide();
-            }
-        });
-    }
-
-    function IsMobileDevice() {
-        return /Mobi|Android/i.test(navigator.userAgent);
-    }
-
-
-    $(document).ready(function () {  
-        loadItems();       
-
-        $('#items-tab').on('shown.bs.tab', function() {loadItems() });
-        $('#boxes-tab').on('shown.bs.tab', function() {loadStorageBoxes() });
-        
-
-        $("#saveItemBtn").on("click", function (event) {
-            event.preventDefault();
-            var formData = new FormData($("#addItemForm")[0]);
-
-            if(!IsMobileDevice() && capturedBlob) {
-                formData.set('image', capturedBlob, 'captured.jpg');
-            }
-
-            $.ajax({
-                url: apiBaseUrl + "/items",
-                type: "POST",
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function (response) {
-                    alert("Item added successfully");
-                    $("#addItemModal").modal("hide");
-                    $("#addItemForm")[0].reset();
-                    loadItems();
-                    capturedBlob = null;
-                    $('#canvas').hide();
-                },
-                error: function (xhr) {
-                    alert("Error: " + xhr.responseText);
-                }
-            });
-        });
-
-
-        $("#saveStorageBoxBtn").click(function () {
-            event.preventDefault();
-            var formData = new FormData($("#addStorageBoxForm")[0]);
-            alert("FormData prepared");
-
-            $.ajax({
-                url: apiBaseUrl + "/storageboxes",
-                type: "POST",
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function (response) {
-                    $("#addStorageBoxModal").modal("hide");
-                    $("#addStorageBoxForm")[0].reset();
-                    loadStorageBoxes();
-                },
-                error: function (xhr) {
-                    alert("Error: " + xhr.responseText);
-                }
-            });
-        });
-
-        $("#addStorageBoxBtn").click(() => {
-            // Generate a new random barcode each time modal opens
-            $("#boxBarcode").val(generateBarcode());
-            $("#addStorageBoxModal").modal("show");
-        });
-
-        $("#addItemBtn").click(() => {
-            loadStorageBoxOptions();
-            $("#addItemModal").modal("show");
-        });
-
-        
-        $("#searchInput").on('keyup', function() {
-            const query = $(this).val().toLowerCase();
-            if ($('#items-tab').hasClass('active')) {
-                filterItems(query);
-            } else if ($('#boxes-tab').hasClass('active')) {
-                filterStorageBoxes(query);
-            }
-        });
-
-        let capturedBlob = null;
-
-        if(IsMobileDevice()) {
-            $("#mobileCameraInput").show();
-            $("#desktopCameraArea").hide();
-        } else {
-            $("#mobileCameraInput").hide();
-            $("#desktopCameraArea").show();
-
-            const video = document.getElementById('video');
-            const canvas = document.getElementById('canvas');
-            const captureBtn = document.getElementById('captureBtn');
-            const context = canvas.getContext('2d');
-
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(stream => {
-                    video.srcObject = stream;
-                })
-                .catch(err => {
-                    console.error("Error accessing camera: ", err);
+        function loadStorageBoxes() {
+            $.get(apiBaseUrl + "/storageboxes", function (data) {
+                let rows = "";
+                data.forEach(box => {
+                    rows += `<tr>
+                                                            <td>${box.id}</td>
+                                                            <td>${box.name}</td>
+                                                            <td>${box.location}</td>
+                                                            <td>${box.barcode}</td>
+                                                        </tr>`;
                 });
-
-            captureBtn.addEventListener('click', () => {
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                canvas.toBlob(blob => {
-                    capturedBlob = blob;
-                }, 'image/jpeg');
+                $("#storageBoxTable tbody").html(rows);
             });
         }
 
-        $('#addItemModal').on('hidden.bs.modal', function () {
-            $('#addItemForm')[0].reset();
-            capturedBlob = null;
-            $('#canvas').hide();
+
+        function loadItems() {
+            $.getJSON(apiBaseUrl + "/items", function (data) {
+                let rows = "";
+                $.each(data, function (i, item) {
+                    rows += `
+                                                                        <tr>
+                                                                            <td>${item.id}</td>
+                                                                            <td>${item.name}</td>
+                                                                            <td>${item.barcode}</td>
+                                                                            <td>${item.tag}</td>
+                                                                            <td>${item.imageUrl
+                            ? `<img src="${item.imageUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;"/>`
+                            : "No Image"}
+                                                                            </td>
+                                                                        </tr>`;
+                });
+                $("#itemsTable tbody").html(rows);
+            });
+        }
+
+        function generateBarcode() {
+            const random = Math.floor(10000000 + Math.random() * 90000000);
+            return `BOX-${random}`;
+        }
+
+        function loadStorageBoxOptions() {
+            $.get(apiBaseUrl + "/storageboxes", function (data) {
+                let options = '<option value="">--Select Storage box--</option>';
+                data.forEach(box => {
+                    options += `<option value="${box.barcode}">${box.name} (${box.location})</option>`;
+                });
+                $("#boxBarcodeSelect").html(options);
+            });
+        }
+
+        function filterItems(query) {
+            $("#itemsTable tbody tr").each(function () {
+                const itemName = $(this).find("td:nth-child(2)").text().toLowerCase();
+                const itemTag = $(this).find("td:nth-child(4)").text().toLowerCase();
+                const barcode = $(this).find("td:nth-child(3)").text().toLowerCase();
+                if (itemName.includes(query) || itemTag.includes(query) || barcode.includes(query)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        }
+
+        function filterStorageBoxes(query) {
+            $("#storageBoxTable tbody tr").each(function () {
+                const boxName = $(this).find("td:nth-child(2)").text().toLowerCase();
+                const boxLocation = $(this).find("td:nth-child(3)").text().toLowerCase();
+                const barcode = $(this).find("td:nth-child(4)").text().toLowerCase();
+                if (boxName.includes(query) || boxLocation.includes(query) || barcode.includes(query)) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        }
+
+        function IsMobileDevice() {
+            return /Mobi|Android/i.test(navigator.userAgent);
+        }
+
+
+        $(document).ready(function () {
+            loadItems();
+
+            $('#items-tab').on('shown.bs.tab', function () { loadItems() });
+            $('#boxes-tab').on('shown.bs.tab', function () { loadStorageBoxes() });
+
+
+            $("#saveItemBtn").on("click", function (event) {
+                event.preventDefault();
+                var formData = new FormData($("#addItemForm")[0]);
+
+                if (!IsMobileDevice() && capturedBlob) {
+                    formData.set('image', capturedBlob, 'captured.jpg');
+                }
+
+                $.ajax({
+                    url: apiBaseUrl + "/items",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        alert("Item added successfully");
+                        $("#addItemModal").modal("hide");
+                        $("#addItemForm")[0].reset();
+                        loadItems();
+                        capturedBlob = null;
+                        $('#canvas').hide();
+                    },
+                    error: function (xhr) {
+                        alert("Error: " + xhr.responseText);
+                    }
+                });
+            });
+
+
+            $("#saveStorageBoxBtn").click(function () {
+                event.preventDefault();
+                var formData = new FormData($("#addStorageBoxForm")[0]);
+
+                $.ajax({
+                    url: apiBaseUrl + "/storageboxes",
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        alert("Storage Box added successfully");* 77 /
+                            $("#addStorageBoxModal").modal("hide");
+                        $("#addStorageBoxForm")[0].reset();
+                        loadStorageBoxes();
+                    },
+                    error: function (xhr) {
+                        alert("Error: " + xhr.responseText);
+                    }
+                });
+            });
+
+            $("#addStorageBoxBtn").click(() => {
+                // Generate a new random barcode each time modal opens
+                $("#boxBarcode").val(generateBarcode());
+                $("#addStorageBoxModal").modal("show");
+            });
+
+            $("#addItemBtn").click(() => {
+                loadStorageBoxOptions();
+                $("#addItemModal").modal("show");
+            });
+
+
+            $("#searchInput").on('keyup', function () {
+                const query = $(this).val().toLowerCase();
+                if ($('#items-tab').hasClass('active')) {
+                    filterItems(query);
+                } else if ($('#boxes-tab').hasClass('active')) {
+                    filterStorageBoxes(query);
+                }
+            });
+
+            let capturedBlob = null;
+
+            if (IsMobileDevice()) {
+                $("#mobileCameraInput").show();
+                $("#desktopCameraArea").hide();
+            } else {
+                $("#mobileCameraInput").hide();
+                $("#desktopCameraArea").show();
+
+                const video = document.getElementById('video');
+                const canvas = document.getElementById('canvas');
+                const captureBtn = document.getElementById('captureBtn');
+                const context = canvas.getContext('2d');
+
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(stream => {
+                        video.srcObject = stream;
+                    })
+                    .catch(err => {
+                        console.error("Error accessing camera: ", err);
+                    });
+
+                captureBtn.addEventListener('click', () => {
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    canvas.toBlob(blob => {
+                        capturedBlob = blob;
+                    }, 'image/jpeg');
+                });
+            }
+
+            $('#addItemModal').on('hidden.bs.modal', function () {
+                $('#addItemForm')[0].reset();
+                capturedBlob = null;
+                $('#canvas').hide();
+
+            });
+
+            $('#addStorageBoxModalLabel').on('hidden.bs.modal', function () {
+                $('#addStorageBoxForm')[0].reset();
+            });
 
         });
-
-        $('#addStorageBoxModalLabel').on('hidden.bs.modal', function () {
-            $('#addStorageBoxForm')[0].reset();
-        });
-
-    });
-</script>
+    </script>
 }
