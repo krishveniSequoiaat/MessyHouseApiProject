@@ -7,8 +7,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Data Source=MessyHouseDb.db"));
+
+var isTesting = builder.Environment.EnvironmentName == "Testing";
+if (isTesting)
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseInMemoryDatabase("TestDb"));
+}
+else
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseSqlite("Data Source=MessyHouseDb.db"));
+}
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -44,6 +54,11 @@ app.MapPost("/storageboxes", async (HttpRequest request, AppDbContext dbContext)
     var name = form["Name"].ToString();
     var barcode = form["Barcode"].ToString();
     var location = form["Location"].ToString();
+    if (string.IsNullOrEmpty(name.Trim()) || string.IsNullOrEmpty(barcode.Trim()) || string.IsNullOrEmpty(location.Trim()))
+    {
+        return Results.BadRequest("Name, Barcode, and Location are required.");
+    }
+
     var storageBox = new StorageBox
     {
         Name = name,
@@ -69,6 +84,17 @@ app.MapPost("/items", async (HttpRequest request, AppDbContext dbContext) =>
     var tag = form["Tag"].ToString();
     var barcode = form["Barcode"].ToString();
 
+
+    if (string.IsNullOrEmpty(name.Trim()) || string.IsNullOrEmpty(tag.Trim()) || string.IsNullOrEmpty(barcode.Trim()))
+    {
+        return Results.BadRequest("Name, Tag, and Barcode are required.");
+    }
+
+    if (!dbContext.StorageBoxes.Any(b => b.Barcode == barcode))
+    {
+        return Results.BadRequest("The provided barcode does not correspond to any existing storage box.");
+    }
+
     string imageUrl = string.Empty;
     if (imageFile != null && imageFile.Length > 0)
     {
@@ -85,6 +111,10 @@ app.MapPost("/items", async (HttpRequest request, AppDbContext dbContext) =>
         }
         var baseUrl = $"{request.Scheme}://{request.Host}";
         imageUrl = $"{baseUrl}/images/{uniqueFileName}";
+    }
+    else
+    {
+        return Results.BadRequest("Image file is required.");
     }
     var item = new Item
     {
@@ -112,7 +142,7 @@ app.MapGet("/items", async (HttpRequest request, AppDbContext dbContext) =>
         Tag = i.Tag,
         Barcode = i.Barcode,
         ImageUrl = string.IsNullOrEmpty(i.ImageUrl) ? null : (i.ImageUrl.StartsWith("http") ? i.ImageUrl : $"{baseUrl}{i.ImageUrl}")
-    }).ToListAsync();
+    }).OrderBy(i => i.Tag).ToListAsync();
 
     return Results.Ok(items);
 })
@@ -219,10 +249,5 @@ app.MapDelete("/storagebox/{id}", async (int id, AppDbContext dbContext) =>
 });
 app.Run();
 
-public record ItemUploadDto
-{
-    public string Name { get; set; }
-    public string Barcode { get; set; }
-    public string Tag { get; set; }
-    public IFormFile Image { get; set; }
-}
+
+public partial class Program { }
