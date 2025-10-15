@@ -109,8 +109,7 @@ app.MapPost("/items", async (HttpRequest request, AppDbContext dbContext) =>
         {
             await imageFile.CopyToAsync(fileStream);
         }
-        var baseUrl = $"{request.Scheme}://{request.Host}";
-        imageUrl = $"{baseUrl}/images/{uniqueFileName}";
+        imageUrl = $"{uniqueFileName}";
     }
     else
     {
@@ -141,7 +140,7 @@ app.MapGet("/items", async (HttpRequest request, AppDbContext dbContext) =>
         Name = i.Name,
         Tag = i.Tag,
         Barcode = i.Barcode,
-        ImageUrl = string.IsNullOrEmpty(i.ImageUrl) ? null : (i.ImageUrl.StartsWith("http") ? i.ImageUrl : $"{baseUrl}{i.ImageUrl}")
+        ImageUrl = string.IsNullOrEmpty(i.ImageUrl) ? null : (i.ImageUrl.StartsWith("http") ? i.ImageUrl : $"{baseUrl}/images/{i.ImageUrl}")
     }).OrderBy(i => i.Tag).ToListAsync();
 
     return Results.Ok(items);
@@ -199,23 +198,62 @@ app.MapGet("/storageboxes/search", async (string? search, AppDbContext dbContext
 })
 .WithName("SearchStorageBoxes");
 
-//update items to another storage box
-app.MapPut("/item/{id}/move/{newStorageBarcode}", async (int id, string newStorageBarcode, AppDbContext dbContext) =>
+app.MapGet("/items/{id}", async (int id, HttpRequest request, AppDbContext dbContext) =>
 {
     var item = await dbContext.Items.FirstOrDefaultAsync(i => i.Id == id);
     if (item == null)
     {
         return Results.NotFound();
     }
-    var newBox = await dbContext.StorageBoxes.FirstOrDefaultAsync(b => b.Barcode == newStorageBarcode);
-    if (newBox == null)
+    var baseUrl = $"{request.Scheme}://{request.Host}";
+    if (!string.IsNullOrEmpty(item.ImageUrl) && !item.ImageUrl.StartsWith("http"))
+    {
+        item.ImageUrl = $"{baseUrl}/images/{item.ImageUrl}";
+    }
+    return Results.Ok(item);
+});
+
+app.MapGet("/storageboxes/{id}", async (int id, AppDbContext dbContext) =>
+{
+    var box = await dbContext.StorageBoxes.FirstOrDefaultAsync(b => b.Id == id);
+    if (box == null)
+    {
+        return Results.NotFound();
+    }
+    return Results.Ok(box);
+});
+
+
+//update an item
+app.MapPut("/item/{id}", async (int id, HttpRequest request, AppDbContext dbContext) =>
+{
+    var item = await dbContext.Items.FirstOrDefaultAsync(i => i.Id == id);
+    if (item == null)
     {
         return Results.NotFound();
     }
 
-    item.Barcode = newStorageBarcode;
-    await dbContext.SaveChangesAsync();
+    var form = await request.ReadFormAsync();
+    var imageFile = form.Files["Image"];
+    var name = form["Name"].ToString();
+    var tag = form["Tag"].ToString();
+    var barcode = form["Barcode"].ToString();
 
+    if (string.IsNullOrEmpty(name.Trim()) || string.IsNullOrEmpty(tag.Trim()) || string.IsNullOrEmpty(barcode.Trim()))
+    {
+        return Results.BadRequest("Name, Tag, and Barcode are required.");
+    }
+
+    if (!dbContext.StorageBoxes.Any(b => b.Barcode == barcode))
+    {
+        return Results.BadRequest("The provided barcode does not correspond to any existing storage box.");
+    }
+
+    item.Name = name;
+    item.Tag = tag;
+    item.Barcode = barcode;
+
+    await dbContext.SaveChangesAsync();
     return Results.Ok(item);
 });
 
@@ -230,6 +268,34 @@ app.MapDelete("/item/{id}", async (int id, AppDbContext dbContext) =>
     await dbContext.SaveChangesAsync();
     return Results.NoContent();
 });
+
+
+app.MapPut("/storagebox/{id}", async (int id, HttpRequest request, AppDbContext dbContext) =>
+{
+    var box = await dbContext.StorageBoxes.FirstOrDefaultAsync(b => b.Id == id);
+    if (box == null)
+    {
+        return Results.NotFound();
+    }
+
+    var form = await request.ReadFormAsync();
+    var name = form["Name"].ToString();
+    var barcode = form["Barcode"].ToString();
+    var location = form["Location"].ToString();
+
+    if (string.IsNullOrEmpty(name.Trim()) || string.IsNullOrEmpty(barcode.Trim()) || string.IsNullOrEmpty(location.Trim()))
+    {
+        return Results.BadRequest("Name, Barcode, and Location are required.");
+    }
+
+    box.Name = name;
+    box.Barcode = barcode;
+    box.Location = location;
+
+    await dbContext.SaveChangesAsync();
+    return Results.Ok(box);
+});
+//delete a storage box only if it does not contain any items
 
 app.MapDelete("/storagebox/{id}", async (int id, AppDbContext dbContext) =>
 {
