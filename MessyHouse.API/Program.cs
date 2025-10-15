@@ -140,7 +140,7 @@ app.MapGet("/items", async (HttpRequest request, AppDbContext dbContext) =>
         Name = i.Name,
         Tag = i.Tag,
         Barcode = i.Barcode,
-        ImageUrl = string.IsNullOrEmpty(i.ImageUrl) ? null : (i.ImageUrl.StartsWith("http") ? i.ImageUrl : $"{baseUrl}/images/{i.ImageUrl}")
+        ImageUrl = string.IsNullOrEmpty(i.ImageUrl) ? null : $"{baseUrl}/images/{i.ImageUrl}"
     }).OrderBy(i => i.Tag).ToListAsync();
 
     return Results.Ok(items);
