@@ -1,4 +1,5 @@
-<div class="modal fade" id="addStorageBoxModal" tabindex="-1" aria-labelledby="addStorageBoxModalLabel" aria-hidden="true">
+<div class="modal fade" id="addStorageBoxModal" tabindex="-1" aria-labelledby="addStorageBoxModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -7,6 +8,7 @@
             </div>
             <div class="modal-body">
                 <form id="addStorageBoxForm">
+                    <input type="hidden" id="boxId" name="id" />
                     <div class="mb-3">
                         <label for="boxName" class="form-label">Name</label>
                         <input type="text" class="form-control" id="boxName" name="name" required />
@@ -17,9 +19,9 @@
                     </div>
                     <div class="mb-3">
                         <label for="boxBarcode" class="form-label">Barcode</label>
-                        <input type="text" class="form-control" id="boxBarcode" name="barcode"  readonly />
+                        <input type="text" class="form-control" id="boxBarcode" name="barcode" readonly />
                     </div>
-                    <button type="submit" id="saveStorageBoxBtn" class="btn btn-primary">Add Box</button>
+                    <button type="submit" id="saveStorageBoxBtn" class="btn btn-primary">Save</button>
                 </form>
             </div>
         </div>

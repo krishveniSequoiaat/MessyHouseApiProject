@@ -2,8 +2,6 @@
 @model IndexModel
 
 <div class="mb-3">
-    <h2>House Organizer</h2>
-
     <button class="btn btn-primary mr-2" id="addItemBtn" data-bs-toggle="modal" data-bs-target="#addItemModal">
         + Add Item
     </button>
@@ -70,12 +68,21 @@
             $.get(apiBaseUrl + "/storageboxes", function (data) {
                 let rows = "";
                 data.forEach(box => {
-                    rows += `<tr>
-                                                                        <td>${box.id}</td>
-                                                                        <td>${box.name}</td>
-                                                                        <td>${box.location}</td>
-                                                                        <td>${box.barcode}</td>
-                                                                    </tr>`;
+                    rows += `<tr> 
+                                                                                                                                                    <td>${box.id}</td>
+                                                                                                                                                    <td>${box.name}</td>
+                                                                                                                                                    <td>${box.location}</td>
+                                                                                                                                                    <td>${box.barcode}</td>
+                                                                                                                                                    <td>
+                                                                                                                                                    <button class="btn btn-link text-primary edit-btn" data-id="${box.id}" onclick="editStorageBox(${box.id})">
+                                                                                                                                                       <i class="fa-solid fa-pen-to-square"></i></button>
+                                                                                                                                                    </td>
+                                                                                                                                                    <td>
+                                                                                                                                                    <button class="btn btn-link text-danger delete-btn" data-id="${box.id}" onclick="deleteStorageBox(${box.id})">
+                                                                                                                                                    <i class="fa-solid fa-trash"></i>
+                                                                                                                                                    </button>
+                                                                                                                                                    </td>
+                                                                                                                                                    </tr>`;
                 });
                 $("#storageBoxTable tbody").html(rows);
             });
@@ -87,16 +94,22 @@
                 let rows = "";
                 $.each(data, function (i, item) {
                     rows += `
-                        <tr>
-                            <td>${item.id}</td>
-                            <td>${item.name}</td>
-                            <td>${item.barcode}</td>
-                            <td>${item.tag}</td>
-                            <td>${item.imageUrl
-                            ? `<img src="${item.imageUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;"/>`
-                            : "No Image"}
-                            </td>
-                        </tr>`;
+                                                                                                                                                                <tr>
+                                                                                                                                                                    <td>${item.id}</td>
+                                                                                                                                                                    <td>${item.name}</td>
+                                                                                                                                                                    <td>${item.barcode}</td>
+                                                                                                                                                                    <td>${item.tag}</td>
+                                                                                                                                                                    <td>${item.imageUrl ? `<img src="${item.imageUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;"/>` : "No Image"}</td>
+                                                                                                                                                                    <td>
+                                                                                                                                                                        <button class="btn btn-link text-primary edit-btn" data-id="${item.id}" onclick="editItem(${item.id})">
+                                                                                                                                                                            <i class="fa-solid fa-pen-to-square"></i></button>
+                                                                                                                                                                    </td>
+                                                                                                                                                                    <td>
+                                                                                                                                                                        <button class="btn btn-link text-danger delete-btn" data-id="${item.id}" onclick="deleteItem(${item.id})">
+                                                                                                                                                                          <i class="fa-solid fa-trash"></i>
+                                                                                                                                                                        </button>
+                                                                                                                                                                    </td>
+                                                                                                                                                                </tr>`;
                 });
                 $("#itemsTable tbody").html(rows);
             });
@@ -107,11 +120,11 @@
             return `BOX-${random}`;
         }
 
-        function loadStorageBoxOptions() {
+        function loadStorageBoxOptions(selectedBarcode = null) {
             $.get(apiBaseUrl + "/storageboxes", function (data) {
                 let options = '<option value="">--Select Storage box--</option>';
                 data.forEach(box => {
-                    options += `<option value="${box.barcode}">${box.name} (${box.location})</option>`;
+                    options += `<option value="${box.barcode}" ${box.barcode === selectedBarcode ? 'selected' : ''}>${box.name} (${box.location})</option>`;
                 });
                 $("#boxBarcodeSelect").html(options);
             });
@@ -147,6 +160,67 @@
             return /Mobi|Android/i.test(navigator.userAgent);
         }
 
+        function editItem(id) {
+            // Fetch item details and populate the form for editing
+            $.get(apiBaseUrl + `/items/${id}`, function (item) {
+                $("#itemId").val(item.id);
+                $("#itemName").val(item.name);
+                $("#itemTag").val(item.tag);
+                loadStorageBoxOptions(item.barcode);
+                $("#boxBarcodeSelect").val(item.barcode);
+                $("#previewImg").attr("src", item.imageUrl);
+                $("#imagePreview").show();
+                $("#desktopCameraArea").hide();
+                $("#mobileCameraInput").hide();
+                $("#addItemModalLabel").text("Edit Item");
+                $("#addItemModal").modal("show");
+            });
+        }
+
+        function deleteItem(id) {
+            if (confirm("Are you sure you want to delete this item?")) {
+                $.ajax({
+                    url: apiBaseUrl + `/item/${id}`,
+                    type: "DELETE",
+                    success: function () {
+                        alert("Item deleted successfully");
+                        loadItems();
+                    },
+                    error: function (xhr) {
+                        alert("Error: " + xhr.responseText);
+                    }
+                });
+            }
+        }
+
+        function editStorageBox(id) {
+            // Fetch box details and populate the form for editing
+            $.get(apiBaseUrl + `/storageboxes/${id}`, function (box) {
+                $("#boxId").val(box.id);
+                $("#boxName").val(box.name);
+                $("#boxLocation").val(box.location);
+                $("#boxBarcode").val(box.barcode);
+                $("#addStorageBoxModalLabel").text("Edit Storage Box");
+                $("#addStorageBoxModal").modal("show");
+            });
+        }
+
+        function deleteStorageBox(id) {
+            if (confirm("Are you sure you want to delete this storage box?")) {
+                $.ajax({
+                    url: apiBaseUrl + `/storagebox/${id}`,
+                    type: "DELETE",
+                    success: function () {
+                        alert("Storage Box deleted successfully");
+                        loadStorageBoxes();
+                    },
+                    error: function (xhr) {
+                        alert("Error: " + xhr.responseText);
+                    }
+                });
+            }
+        }
+
 
         $(document).ready(function () {
             loadItems();
@@ -157,25 +231,31 @@
 
             $("#saveItemBtn").on("click", function (event) {
                 event.preventDefault();
-                var formData = new FormData($("#addItemForm")[0]);
+
+                const id = $("#itemId").val();
+                const formData = new FormData($("#addItemForm")[0]);
+                const method = id ? "PUT" : "POST";
+                const url = id ? `${apiBaseUrl}/item/${id}` : `${apiBaseUrl}/items`;
 
                 if (!IsMobileDevice() && capturedBlob) {
                     formData.set('image', capturedBlob, 'captured.jpg');
                 }
 
+
                 $.ajax({
-                    url: apiBaseUrl + "/items",
-                    type: "POST",
+                    url: url,
+                    type: method,
                     data: formData,
                     processData: false,
                     contentType: false,
                     success: function (response) {
-                        alert("Item added successfully");
+                        alert("Item " + (method === "POST" ? "added" : "updated") + " successfully");
                         $("#addItemModal").modal("hide");
                         $("#addItemForm")[0].reset();
                         loadItems();
                         capturedBlob = null;
-                        $('#canvas').hide();
+                        $('#imagePreview').hide();
+                        $('#previewImg').attr('src', '#');
                     },
                     error: function (xhr) {
                         alert("Error: " + xhr.responseText);
@@ -184,18 +264,22 @@
             });
 
 
-            $("#saveStorageBoxBtn").click(function () {
+            $("#saveStorageBoxBtn").click(function (event) {
                 event.preventDefault();
-                var formData = new FormData($("#addStorageBoxForm")[0]);
+                const formData = new FormData($("#addStorageBoxForm")[0]);
+
+                const id = $("#boxId").val();
+                const method = id ? "PUT" : "POST";
+                const url = id ? `${apiBaseUrl}/storagebox/${id}` : `${apiBaseUrl}/storageboxes`;
 
                 $.ajax({
-                    url: apiBaseUrl + "/storageboxes",
-                    type: "POST",
+                    url: url,
+                    type: method,
                     data: formData,
                     processData: false,
                     contentType: false,
                     success: function (response) {
-                        alert("Storage Box added successfully");
+                        alert("Storage Box " + (method === "POST" ? "added" : "updated") + " successfully");
                         $("#addStorageBoxModal").modal("hide");
                         $("#addStorageBoxForm")[0].reset();
                         loadStorageBoxes();
@@ -209,11 +293,22 @@
             $("#addStorageBoxBtn").click(() => {
                 // Generate a new random barcode each time modal opens
                 $("#boxBarcode").val(generateBarcode());
+                $("#addStorageBoxModalLabel").text("Add Storage Box");
                 $("#addStorageBoxModal").modal("show");
             });
 
             $("#addItemBtn").click(() => {
                 loadStorageBoxOptions();
+                $("#itemId").val('');
+                if (IsMobileDevice()) {
+                    $("#mobileCameraInput").show();
+                    $("#desktopCameraArea").hide();
+                } else {
+                    $("#mobileCameraInput").hide();
+                    $("#desktopCameraArea").show();
+                }
+
+                $("#addItemModalLabel").text("Add Item");
                 $("#addItemModal").modal("show");
             });
 
@@ -254,6 +349,7 @@
                     canvas.toBlob(blob => {
                         capturedBlob = blob;
                     }, 'image/jpeg');
+                    canvas.style.display = 'block';
                 });
             }
 

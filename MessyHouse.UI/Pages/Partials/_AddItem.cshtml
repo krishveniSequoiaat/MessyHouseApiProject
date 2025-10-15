@@ -8,14 +8,28 @@
             <div class="modal-body">
                 <form id="addItemForm" enctype="multipart/form-data">
                     <div class="mb-3 form-group">
-                        <label class="form-label">Item Photo</label>
-                        <input type="file" class="form-control" id="mobileCameraInput" name="image" accept="image/*"  capture="environment" style="display:none;" required />
-                        <div id="desktopCameraArea" style="display:none;">
-                            <video id="video" width="320" height="240" autoplay></video>
-                            <button type="button" id="captureBtn" class="btn btn-secondary mt-2">Capture Photo</button>
-                            <canvas id="canvas" width="320" height="240" style="display:none;"></canvas>
+                        <label for="itemPhoto" class="form-label">Item Photo</label>
+                        <!--Mobile Camera Input-->
+                        <input type="file" class="form-control" id="mobileCameraInput" name="image" accept="image/*"
+                            capture="environment" style="display:none;" required />
+                        <!--Desktop Camera Area-->
+                        <div id="desktopCameraArea"
+                            style="display: flex;align-items: center; justify-content: center; gap: 10px;margin-top:6px;">
+                            <video id="video" width="120" height="120" autoplay
+                                style="border-radius: 8px;border: 1px solid #ccc;background-color: #000;"></video>
+                            <button type="button" id="captureBtn"
+                                class="btn btn-sm btn-outline-secondary">Capture</button>
+                            <canvas id="canvas" width="120" height="120" style="display:none;"></canvas>
+                        </div>
+                        <!--Image Preview-->
+                        <div id="imagePreview" width="120" height="120"
+                            style="margin-top: 10px; display: none; justify-content: center;">
+                            <img id="previewImg"
+                                style="width:120px;height:120px;object-fit:cover;border-radius:8px;border:1px solid #ddd;"
+                                src="#" alt="Image Preview" />
                         </div>
                     </div>
+                    <input type="hidden" id="itemId" name="id" />
                     <div class="mb-3 form-group">
                         <label for="itemName" class="form-label">Item Name</label>
                         <input type="text" class="form-control" id="itemName" name="name" required />
