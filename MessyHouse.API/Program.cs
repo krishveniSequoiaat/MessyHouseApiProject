@@ -225,7 +225,7 @@ app.MapGet("/storageboxes/{id}", async (int id, AppDbContext dbContext) =>
 
 
 //update an item
-app.MapPut("/item/{id}", async (int id, HttpRequest request, AppDbContext dbContext) =>
+app.MapPut("/items/{id}", async (int id, HttpRequest request, AppDbContext dbContext) =>
 {
     var item = await dbContext.Items.FirstOrDefaultAsync(i => i.Id == id);
     if (item == null)
@@ -257,7 +257,7 @@ app.MapPut("/item/{id}", async (int id, HttpRequest request, AppDbContext dbCont
     return Results.Ok(item);
 });
 
-app.MapDelete("/item/{id}", async (int id, AppDbContext dbContext) =>
+app.MapDelete("/items/{id}", async (int id, AppDbContext dbContext) =>
 {
     var item = await dbContext.Items.FirstOrDefaultAsync(i => i.Id == id);
     if (item == null)
@@ -270,7 +270,7 @@ app.MapDelete("/item/{id}", async (int id, AppDbContext dbContext) =>
 });
 
 
-app.MapPut("/storagebox/{id}", async (int id, HttpRequest request, AppDbContext dbContext) =>
+app.MapPut("/storageboxes/{id}", async (int id, HttpRequest request, AppDbContext dbContext) =>
 {
     var box = await dbContext.StorageBoxes.FirstOrDefaultAsync(b => b.Id == id);
     if (box == null)
@@ -297,7 +297,7 @@ app.MapPut("/storagebox/{id}", async (int id, HttpRequest request, AppDbContext 
 });
 //delete a storage box only if it does not contain any items
 
-app.MapDelete("/storagebox/{id}", async (int id, AppDbContext dbContext) =>
+app.MapDelete("/storageboxes/{id}", async (int id, AppDbContext dbContext) =>
 {
     var box = await dbContext.StorageBoxes.FirstOrDefaultAsync(b => b.Id == id);
     if (box == null)

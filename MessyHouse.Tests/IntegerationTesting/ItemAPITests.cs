@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using MessyHouseAPIProject.Models;
 using Microsoft.OpenApi.Expressions;
-namespace MessyHouse.Tests;
+namespace MessyHouse.Tests.IntegerationTesting;
 
 [Collection("Sequential")]
 public class ItemAPITests : IClassFixture<CustomWebApplicationFactory>
@@ -21,8 +21,8 @@ public class ItemAPITests : IClassFixture<CustomWebApplicationFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<MessyHouseAPIProject.Data.AppDbContext>();
-            db.Items.RemoveRange(db.Items);
-            db.StorageBoxes.RemoveRange(db.StorageBoxes);
+            db.Database.EnsureDeleted();
+            db.Database.EnsureCreated();
             db.SaveChanges();
             db.StorageBoxes.AddRange(
                 new StorageBox { Name = "Box1", Barcode = "987654321012", Location = "Location1" },
@@ -163,6 +163,122 @@ public class ItemAPITests : IClassFixture<CustomWebApplicationFactory>
     {
         SeedTestData();
         var response = await _client.GetAsync("/items/search?search=NonExistentItem");
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task EditItem_UpdateItemSuccessfully()
+    {
+        SeedTestData();
+        var formData = new MultipartFormDataContent
+        {
+            { new StringContent("UpdatedItemName"), "Name" },
+            { new StringContent("UpdatedTag"), "Tag" },
+            { new StringContent("987654321012"), "Barcode" }
+        };
+
+        var dummyImage = new byte[] { 0x20, 0x21, 0x22 }; // Replace with actual image bytes
+        formData.Add(new ByteArrayContent(dummyImage), "Image", "testimage.jpg");
+
+        var response = await _client.PutAsync("/items/1", formData);
+        response.EnsureSuccessStatusCode();
+
+        var getResponse = await _client.GetAsync("/items");
+        getResponse.EnsureSuccessStatusCode();
+        var items = await getResponse.Content.ReadFromJsonAsync<List<Item>>();
+        Assert.Contains(items, i => i.Name == "UpdatedItemName" && i.Tag == "UpdatedTag");
+    }
+
+    [Fact]
+    public async Task EditItem_NonExistentItem_ReturnsNotFound()
+    {
+        SeedTestData();
+        var formData = new MultipartFormDataContent
+        {
+            { new StringContent("UpdatedItemName"), "Name" },
+            { new StringContent("UpdatedTag"), "Tag" },
+            { new StringContent("987654321012"), "Barcode" }
+        };
+
+        var dummyImage = new byte[] { 0x20, 0x21, 0x22 }; // Replace with actual image bytes
+        formData.Add(new ByteArrayContent(dummyImage), "Image", "testimage.jpg");
+
+        var response = await _client.PutAsync("/items/999", formData); // Non-existent item ID
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task EditItem_MissingName_ReturnsBadRequest()
+    {
+        SeedTestData();
+        var formData = new MultipartFormDataContent
+        {
+            { new StringContent(""), "Name" }, // Missing name
+            { new StringContent("UpdatedTag"), "Tag" },
+            { new StringContent("987654321012"), "Barcode" }
+        };
+
+        var dummyImage = new byte[] { 0x20, 0x21, 0x22 }; // Replace with actual image bytes
+        formData.Add(new ByteArrayContent(dummyImage), "Image", "testimage.jpg");
+
+        var response = await _client.PutAsync("/items/1", formData);
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task EditItem_MissingTag_ReturnsBadRequest()
+    {
+        SeedTestData();
+        var formData = new MultipartFormDataContent
+        {
+            { new StringContent("UpdatedItemName"), "Name" },
+            { new StringContent(""), "Tag" }, // Missing tag
+            { new StringContent("987654321012"), "Barcode" }
+        };
+
+        var dummyImage = new byte[] { 0x20, 0x21, 0x22 }; // Replace with actual image bytes
+        formData.Add(new ByteArrayContent(dummyImage), "Image", "testimage.jpg");
+
+        var response = await _client.PutAsync("/items/1", formData);
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task EditItem_MissingBarcode_ReturnsBadRequest()
+    {
+        SeedTestData();
+        var formData = new MultipartFormDataContent
+        {
+            { new StringContent("UpdatedItemName"), "Name" },
+            { new StringContent("UpdatedTag"), "Tag" },
+            { new StringContent(""), "Barcode" } // Missing barcode
+        };
+
+        var dummyImage = new byte[] { 0x20, 0x21, 0x22 }; // Replace with actual image bytes
+        formData.Add(new ByteArrayContent(dummyImage), "Image", "testimage.jpg");
+
+        var response = await _client.PutAsync("/items/1", formData);
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteItem_RemoveItemSuccessfully()
+    {
+        SeedTestData();
+        var response = await _client.DeleteAsync("/items/1");
+        response.EnsureSuccessStatusCode();
+
+        var getResponse = await _client.GetAsync("/items");
+        getResponse.EnsureSuccessStatusCode();
+        var items = await getResponse.Content.ReadFromJsonAsync<List<Item>>();
+        Assert.DoesNotContain(items, i => i.Id == 1);
+    }
+
+    [Fact]
+    public async Task DeleteItem_NonExistentItem_ReturnsNotFound()
+    {
+        SeedTestData();
+        var response = await _client.DeleteAsync("/items/999"); // Non-existent item ID
         Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
     }
 }
