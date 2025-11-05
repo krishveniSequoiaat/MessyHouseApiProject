@@ -313,7 +313,46 @@ app.MapDelete("/storageboxes/{id}", async (int id, AppDbContext dbContext) =>
     await dbContext.SaveChangesAsync();
     return Results.NoContent();
 });
+
+
+//get items by storage box barcode
+app.MapGet("/storageboxes/{id}/items", async (int id, HttpRequest request, AppDbContext dbContext) =>
+{
+    var box = await dbContext.StorageBoxes.FirstOrDefaultAsync(b => b.Id == id);
+    var items = await dbContext.Items.Where(i => i.Barcode == box.Barcode).ToListAsync();
+    if (items == null || items.Count == 0)
+    {
+        return Results.NotFound();
+    }
+
+    var baseUrl = $"{request.Scheme}://{request.Host}";
+    var itemsWithFullImageUrl = items.Select(i => new Item
+    {
+        Id = i.Id,
+        Name = i.Name,
+        Tag = i.Tag,
+        Barcode = i.Barcode,
+        ImageUrl = $"{baseUrl}/images/{i.ImageUrl}"
+    }).ToList();
+
+    var result = new
+    {
+        boxId = box.Id,
+        boxName = box.Name,
+        boxLocation = box.Location,
+        boxBarcode = box.Barcode,
+        items = itemsWithFullImageUrl
+    };
+
+    return Results.Ok(result);
+}).WithName("GetItemsByStorageBoxBarcode");
+
 app.Run();
 
 
 public partial class Program { }
+
+public class StorageboxDto
+{
+
+}
