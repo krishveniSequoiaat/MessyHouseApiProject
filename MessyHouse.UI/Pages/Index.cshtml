@@ -75,19 +75,19 @@
                 let rows = "";
                 data.forEach(box => {
                     rows += `<tr> 
-                                                                                                                                                                                                                                                                                            <td>${box.id}</td>
-                                                                                                                                                                                                                                                                                            <td>${box.name}</td>
-                                                                                                                                                                                                                                                                                            <td>${box.location}</td>
-                                                                                                                                                                                                                                                                                            <td>${box.barcode}</td>
-                                                                                                                                                                                                                                                                                            <td>
-                                                                                                                                                                                                                                                                                            <button class="btn btn-sm btn-outline-primary view-btn d-inline-flex align-items-center gap-1"data-id="${box.id}" onclick="viewStorageBoxItems(${box.id})">
-                                                                                                                                                                                                                                                                                            <i class="fa fa-eye"></i> View</button>
-                                                                                                                                                                                                                                                                                            <button class="btn btn-link text-primary edit-btn" data-id="${box.id}" onclick="editStorageBox(${box.id})">
-                                                                                                                                                                                                                                                                                            <i class="fa-solid fa-pen-to-square"></i></button>
-                                                                                                                                                                                                                                                                                            <button class="btn btn-link text-danger delete-btn" data-id="${box.id}" onclick="deleteStorageBox(${box.id})">
-                                                                                                                                                                                                                                                                                            <i class="fa-solid fa-trash"></i></button>
-                                                                                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                                                                                            </tr>`;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>${box.id}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>${box.name}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>${box.location}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>${box.barcode}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <button class="btn btn-sm btn-outline-primary view-btn d-inline-flex align-items-center gap-1"data-id="${box.id}" onclick="viewStorageBoxItems(${box.id})">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <i class="fa fa-eye"></i> View</button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <button class="btn btn-link text-primary edit-btn" data-id="${box.id}" onclick="editStorageBox(${box.id})">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <i class="fa-solid fa-pen-to-square"></i></button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <button class="btn btn-link text-danger delete-btn" data-id="${box.id}" onclick="deleteStorageBox(${box.id})">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <i class="fa-solid fa-trash"></i></button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </tr>`;
 
                 });
                 $("#storageBoxTable tbody").html(rows);
@@ -100,21 +100,21 @@
                 let rows = "";
                 $.each(data, function (i, item) {
                     rows += `<tr>
-                                                                                                                                                                                                                                                                                                                                                                                                                                <td>${item.id}</td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                <td>${item.name}</td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                <td>${item.barcode}</td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                <td>${item.tag}</td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                <td>${item.imageUrl ? `<img src="${item.imageUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;"/>` : "No Image"}</td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                <td>
-                                                                                                                                                                                                                                                                                                                                                                                                                                    <button class="btn btn-link text-primary edit-btn" data-id="${item.id}" onclick="editItem(${item.id})">
-                                                                                                                                                                                                                                                                                                                                                                                                                                        <i class="fa-solid fa-pen-to-square"></i>
-                                                                                                                                                                                                                                                                                                                                                                                                                                    </button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <td>${item.id}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <td>${item.name}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <td>${item.barcode}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <td>${item.tag}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <td>${item.imageUrl ? `<img src="${item.imageUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;"/>` : "No Image"}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <button class="btn btn-link text-primary edit-btn" data-id="${item.id}" onclick="editItem(${item.id})">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <i class="fa-solid fa-pen-to-square"></i>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </button>
                                 
-                                                                                                                                                                                                                                                                                                                                                                                                                                    <button class="btn btn-link text-danger delete-btn" data-id="${item.id}" onclick="deleteItem(${item.id})">
-                                                                                                                                                                                                                                                                                                                                                                                                                                        <i class="fa-solid fa-trash"></i>
-                                                                                                                                                                                                                                                                                                                                                                                                                                    </button>
-                                                                                                                                                                                                                                                                                                                                                                                                                                </td>
-                                                                                                                                                                                                                                                                                                                                                                                                                        </tr>`;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <button class="btn btn-link text-danger delete-btn" data-id="${item.id}" onclick="deleteItem(${item.id})">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <i class="fa-solid fa-trash"></i>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        </button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </tr>`;
                 });
                 $("#itemsTable tbody").html(rows);
             });
@@ -134,6 +134,26 @@
                 $("#boxBarcodeSelect").html(options);
             });
 
+        }
+
+        function loadStorageBoxOptionsAndSet(selectedBarcode = null) {
+            $.ajax({
+                url: apiBaseUrl + `/storageboxes`,
+                type: "GET",
+                success: function (data) {
+                    $("#boxBarcodeSelect").empty()
+                    let options = '<option value="">--Select Storage box--</option>';
+                    data.forEach(box => {
+                        options += `<option value="${box.barcode}" ${box.barcode === selectedBarcode ? 'selected' : ''}>${box.name} (${box.location})</option>`;
+                    });
+                    $("#boxBarcodeSelect").html(options);
+                    $('#boxBarcodeSelect').val(currentBoxBarcode);
+                    $("#boxBarcodeSelect").prop("disabled", true);
+                },
+                error: function (err) {
+                    alert("Error Loading Storage Boxes.");
+                }
+            });
         }
 
         function filterItems(query) {
@@ -231,7 +251,6 @@
         }
 
         function viewStorageBoxItems(id) {
-            $("#viewItemsModal").modal("show");
             viewItemsSelected = true;
             $.ajax({
                 url: apiBaseUrl + `/storageboxes/${id}/items`,
@@ -247,20 +266,19 @@
                     if (data.items && data.items.length > 0) {
                         data.items.forEach(item => {
                             rows += `
-                                                                                                                                                                                                                                                                                                                                                                        <tr>
-                                                                                                                                                                                                                                                                                                                                                                        <td>${item.name}</td>
-                                                                                                                                                                                                                                                                                                                                                                        <td>${item.tag}</td>
-                                                                                                                                                                                                                                                                                                                                                                        <td>${item.imageUrl ? `<img src="${item.imageUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;"/>` : "No Image"}</td>
-                                                                                                                                                                                                                                                                                                                                                                        <td>
-                                                                                                                                                                                                                                                                                                                                                                        <button class="btn btn-link text-danger delete-btn" data-id="${item.id}" onclick="deleteItemInStorageBox(${item.id})">
-                                                                                                                                                                                                                                                                                                                                                                        <i class="fa-solid fa-trash"></i></td>
-                                                                                                                                                                                                                                                                                                                                                                        </tr>`;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <tr>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>${item.name}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>${item.tag}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>${item.imageUrl ? `<img src="${item.imageUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;"/>` : "No Image"}</td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <button class="btn btn-link text-danger delete-btn" data-id="${item.id}" onclick="deleteItemInStorageBox(${item.id})">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            <i class="fa-solid fa-trash"></i></td>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </tr>`;
                         });
                     }
                     else {
                         rows = "<tr><td colspan='3'>No items found in this storage box.</td></tr>";
                     }
-
                     $("#itemsTableBody").html(rows);
                 },
                 error: function () {
@@ -268,8 +286,8 @@
                         `<tr><td colspan="4" class="text-center text-danger">Failed to Load Items</td></tr>`
                     );
                 }
-
             });
+            $("#viewItemsModal").modal("show");
         }
 
         function deleteItemInStorageBox(id) {
@@ -299,10 +317,7 @@
             $("#saveItemBtn").on("click", function (event) {
                 event.preventDefault();
                 $("#saveItemBtn").prop("disabled", true).text('Saving...');
-
-                if (!viewItemsSelected) {
-                    $("#boxBarcodeSelect").prop("disabled", false);
-                }
+                $("#boxBarcodeSelect").prop("disabled", false);
 
                 const id = $("#itemId").val();
                 const formData = new FormData($("#addItemForm")[0]);
@@ -335,6 +350,9 @@
                         $("#saveItemBtn").prop("disabled", false).text('Save');
                     }
                 });
+                if (viewItemsSelected) {
+                    $("#boxBarcodeSelect").prop("disabled", true);
+                }
             });
 
 
@@ -445,24 +463,32 @@
                 $("#addStorageBoxForm")[0].reset();
             });
 
-            $("#addItemBtn_view").click(() => {
-                $("#viewItemsModal").on('hidden.bs.modal', function () {
-                }).modal("hide");
-                loadStorageBoxOptions(currentBoxBarcode);
-                $('#boxBarcodeSelect').val(currentBoxBarcode);
-                $("#boxBarcodeSelect").prop("disabled", true);
-                $("#itemId").val('');
-                if (IsMobileDevice()) {
-                    $("#mobileCameraInput").show();
-                    $("#desktopCameraArea").hide();
-                } else {
-                    $("#mobileCameraInput").hide();
-                    $("#desktopCameraArea").show();
-                }
+            //Setting flag for open and close of add item 
+            let openAddItemAfterClose = false;
 
-                $("#addItemModalLabel").text("Add Item to the Box: " + currentBox);
-                $("#addItemModal").modal("show");
+            $("#addItemBtn_view").click(() => {
+                openAddItemAfterClose = true;
+                $("#viewItemsModal").modal("hide");
+
             });
+
+            $("#viewItemsModal").on('hidden.bs.modal', function () {
+                if (openAddItemAfterClose) {
+                    openAddItemAfterClose = false;
+                    loadStorageBoxOptionsAndSet(currentBoxBarcode);
+                    $("#itemId").val('');
+                    if (IsMobileDevice()) {
+                        $("#mobileCameraInput").show();
+                        $("#desktopCameraArea").hide();
+                    } else {
+                        $("#mobileCameraInput").hide();
+                        $("#desktopCameraArea").show();
+                    }
+                    $("#addItemModalLabel").text('Add Item to the Box: ' + currentBox);
+                    $("#addItemModal").modal("show");
+                }
+            });
+
 
         });
     </script>

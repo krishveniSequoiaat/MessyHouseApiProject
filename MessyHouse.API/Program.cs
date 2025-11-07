@@ -320,10 +320,6 @@ app.MapGet("/storageboxes/{id}/items", async (int id, HttpRequest request, AppDb
 {
     var box = await dbContext.StorageBoxes.FirstOrDefaultAsync(b => b.Id == id);
     var items = await dbContext.Items.Where(i => i.Barcode == box.Barcode).ToListAsync();
-    if (items == null || items.Count == 0)
-    {
-        return Results.NotFound();
-    }
 
     var baseUrl = $"{request.Scheme}://{request.Host}";
     var itemsWithFullImageUrl = items.Select(i => new Item
