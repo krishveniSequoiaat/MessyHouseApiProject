@@ -7,5 +7,7 @@ namespace MessyHouseAPIProject.Models
         public required string ImageUrl { get; set; }
         public required string Tag { get; set; }
         public required string Barcode { get; set; }
+        public int UserId { get; set; }
+
     }
 }

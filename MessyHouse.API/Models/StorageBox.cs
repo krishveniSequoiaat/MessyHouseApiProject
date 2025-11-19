@@ -13,5 +13,7 @@ namespace MessyHouseAPIProject.Models
         public required string Location { get; set; }
         [NotNull]
         public required string Barcode { get; set; }
+        public int UserId { get; set; }
+
     }
 }
