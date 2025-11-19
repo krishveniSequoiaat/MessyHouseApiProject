@@ -1,7 +1,12 @@
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using MessyHouseAPIProject.Data;
 using MessyHouseAPIProject.Models;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using MessyHouseAPIProject.Dto;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +36,27 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
+
+var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]);
+var issuer = builder.Configuration["Jwt:Issuer"];
+var audience = builder.Configuration["Jwt:Audience"];
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = issuer,
+            ValidAudience = audience,
+            IssuerSigningKey = new SymmetricSecurityKey(key)
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -45,6 +71,67 @@ List<StorageBox> storageBoxes = new();
 //var newItemid = 1;
 app.UseCors("AllowAll");
 app.UseStaticFiles();
+app.UseAuthentication();
+app.UseAuthorization();
+
+
+
+//--Register user
+
+app.MapPost("/register", async (RegisterDto dto, AppDbContext db) =>
+{
+    if (await db.Users.AnyAsync(x => x.Username == dto.Username))
+        return Results.BadRequest("Username already exists");
+
+    if (await db.Users.AnyAsync(x => x.Email == dto.Email))
+        return Results.BadRequest("Email already exists");
+
+    var user = new User
+    {
+        Username = dto.Username,
+        Email = dto.Email,
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password)
+    };
+
+    db.Users.Add(user);
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new { user.UserId, user.Username, user.Email });
+});
+
+
+//login for user
+
+app.MapPost("/login", async (LoginDto dto, AppDbContext db, IConfiguration config) =>
+{
+    var user = await db.Users.FirstOrDefaultAsync(x => x.Username == dto.Username);
+
+    if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+        return Results.Unauthorized();
+
+    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Key"]));
+    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+    var claims = new[]
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+        new Claim(ClaimTypes.Name, user.Username),
+        new Claim(ClaimTypes.Email, user.Email)
+    };
+
+    var token = new JwtSecurityToken(
+        issuer: config["Jwt:Issuer"],
+        audience: config["Jwt:Audience"],
+        claims: claims,
+        expires: DateTime.UtcNow.AddHours(6),
+        signingCredentials: creds
+    );
+
+    var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+
+    return Results.Ok(new { Token = jwt, Username = user.Username, Email = user.Email });
+});
+
 
 //---Create a StorageBox-----
 
@@ -58,19 +145,22 @@ app.MapPost("/storageboxes", async (HttpRequest request, AppDbContext dbContext)
     {
         return Results.BadRequest("Name, Barcode, and Location are required.");
     }
+    var userId = int.Parse(request.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier));
 
     var storageBox = new StorageBox
     {
         Name = name,
         Barcode = barcode,
-        Location = location
+        Location = location,
+        UserId = userId
     };
 
     dbContext.Add(storageBox);
     await dbContext.SaveChangesAsync();
     return Results.Created($"/storagebox/{storageBox.Id}", storageBox);
 })
-.WithName("CreateStorageBox");
+.WithName("CreateStorageBox")
+.RequireAuthorization();
 
 
 
@@ -83,7 +173,7 @@ app.MapPost("/items", async (HttpRequest request, AppDbContext dbContext) =>
     var name = form["Name"].ToString();
     var tag = form["Tag"].ToString();
     var barcode = form["Barcode"].ToString();
-
+    var userId = int.Parse(request.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier));
 
     if (string.IsNullOrEmpty(name.Trim()) || string.IsNullOrEmpty(tag.Trim()) || string.IsNullOrEmpty(barcode.Trim()))
     {
@@ -120,12 +210,14 @@ app.MapPost("/items", async (HttpRequest request, AppDbContext dbContext) =>
         Name = name,
         Tag = tag,
         Barcode = barcode,
-        ImageUrl = imageUrl
+        ImageUrl = imageUrl,
+        UserId = userId
     };
     dbContext.Add(item);
     await dbContext.SaveChangesAsync();
     return Results.Created($"/item/{item.Id}", item);
-});
+})
+.RequireAuthorization();
 
 
 
@@ -133,38 +225,50 @@ app.MapPost("/items", async (HttpRequest request, AppDbContext dbContext) =>
 
 app.MapGet("/items", async (HttpRequest request, AppDbContext dbContext) =>
 {
+    var userId = int.Parse(request.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier));
     var baseUrl = $"{request.Scheme}://{request.Host}";
-    var items = await dbContext.Items.Select(i => new Item
-    {
-        Id = i.Id,
-        Name = i.Name,
-        Tag = i.Tag,
-        Barcode = i.Barcode,
-        ImageUrl = string.IsNullOrEmpty(i.ImageUrl) ? null : $"{baseUrl}/images/{i.ImageUrl}"
-    }).OrderBy(i => i.Tag).ToListAsync();
+    var items = await dbContext.Items
+                .Where(i => i.UserId == userId)
+                .Select(i => new Item
+                {
+                    Id = i.Id,
+                    Name = i.Name,
+                    Tag = i.Tag,
+                    Barcode = i.Barcode,
+                    ImageUrl = string.IsNullOrEmpty(i.ImageUrl) ? null : $"{baseUrl}/images/{i.ImageUrl}",
+                    UserId = i.UserId
+                }).OrderBy(i => i.Tag).ToListAsync();
 
     return Results.Ok(items);
 })
 .WithName("GetAllItems")
-.WithOpenApi();
+.WithOpenApi()
+.RequireAuthorization();
 
 
 
 //get all storage boxes
 
-app.MapGet("/storageboxes", async (AppDbContext dbContext) =>
+app.MapGet("/storageboxes", async (HttpRequest request, AppDbContext dbContext) =>
 {
-    var boxes = await dbContext.StorageBoxes.ToListAsync();
+    var userId = int.Parse(request.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier));
+    Console.WriteLine(request);
+    Console.WriteLine(userId);
+    var boxes = await dbContext.StorageBoxes.Where(i => i.UserId == userId).ToListAsync();
     return Results.Ok(boxes);
 })
 .WithName("GetAllStorageBoxes")
-.WithOpenApi();
+.WithOpenApi()
+.RequireAuthorization();
+
 
 //get items with tags or name or barcode   
 
-app.MapGet("/items/search", async (string? search, AppDbContext dbContext) =>
+app.MapGet("/items/search", async (string? search, HttpRequest request, AppDbContext dbContext) =>
 {
-    var query = dbContext.Items.AsQueryable();
+
+    var userId = int.Parse(request.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier));
+    var query = dbContext.Items.Where(i => i.UserId == userId).AsQueryable();
     if (!string.IsNullOrEmpty(search))
     {
         search = search.ToLower();
@@ -178,11 +282,15 @@ app.MapGet("/items/search", async (string? search, AppDbContext dbContext) =>
     }
     return Results.Ok(items);
 })
-.WithName("SearchItems");
+.WithName("SearchItems")
+.RequireAuthorization();
 
-app.MapGet("/storageboxes/search", async (string? search, AppDbContext dbContext) =>
+
+//search storgebox using keywords
+app.MapGet("/storageboxes/search", async (string? search, HttpRequest request, AppDbContext dbContext) =>
 {
-    var query = dbContext.StorageBoxes.AsQueryable();
+    var userId = int.Parse(request.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier));
+    var query = dbContext.StorageBoxes.Where(i => i.UserId == userId).AsQueryable();
     if (!string.IsNullOrEmpty(search))
     {
         search = search.ToLower();
@@ -196,11 +304,15 @@ app.MapGet("/storageboxes/search", async (string? search, AppDbContext dbContext
     }
     return Results.Ok(items);
 })
-.WithName("SearchStorageBoxes");
+.WithName("SearchStorageBoxes")
+.RequireAuthorization();
 
+
+//Get item with {id}
 app.MapGet("/items/{id}", async (int id, HttpRequest request, AppDbContext dbContext) =>
 {
-    var item = await dbContext.Items.FirstOrDefaultAsync(i => i.Id == id);
+    var userId = int.Parse(request.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier));
+    var item = await dbContext.Items.FirstOrDefaultAsync(i => i.Id == id && i.UserId == userId);
     if (item == null)
     {
         return Results.NotFound();
@@ -211,23 +323,29 @@ app.MapGet("/items/{id}", async (int id, HttpRequest request, AppDbContext dbCon
         item.ImageUrl = $"{baseUrl}/images/{item.ImageUrl}";
     }
     return Results.Ok(item);
-});
+})
+.RequireAuthorization();
 
-app.MapGet("/storageboxes/{id}", async (int id, AppDbContext dbContext) =>
+
+//get Stroage box with {id}
+app.MapGet("/storageboxes/{id}", async (int id, HttpRequest request, AppDbContext dbContext) =>
 {
-    var box = await dbContext.StorageBoxes.FirstOrDefaultAsync(b => b.Id == id);
+    var userId = int.Parse(request.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier));
+    var box = await dbContext.StorageBoxes.FirstOrDefaultAsync(i => i.Id == id && i.UserId == userId);
     if (box == null)
     {
         return Results.NotFound();
     }
     return Results.Ok(box);
-});
+})
+.RequireAuthorization();
 
 
 //update an item
 app.MapPut("/items/{id}", async (int id, HttpRequest request, AppDbContext dbContext) =>
 {
-    var item = await dbContext.Items.FirstOrDefaultAsync(i => i.Id == id);
+    var userId = int.Parse(request.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier));
+    var item = await dbContext.Items.FirstOrDefaultAsync(i => i.Id == id && i.UserId == userId);
     if (item == null)
     {
         return Results.NotFound();
@@ -252,14 +370,19 @@ app.MapPut("/items/{id}", async (int id, HttpRequest request, AppDbContext dbCon
     item.Name = name;
     item.Tag = tag;
     item.Barcode = barcode;
+    item.UserId = userId;
 
     await dbContext.SaveChangesAsync();
     return Results.Ok(item);
-});
+})
+.RequireAuthorization();
 
-app.MapDelete("/items/{id}", async (int id, AppDbContext dbContext) =>
+
+//delete items using {id}
+app.MapDelete("/items/{id}", async (int id, HttpRequest request, AppDbContext dbContext) =>
 {
-    var item = await dbContext.Items.FirstOrDefaultAsync(i => i.Id == id);
+    var userId = int.Parse(request.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier));
+    var item = await dbContext.Items.FirstOrDefaultAsync(i => i.Id == id && i.UserId == userId);
     if (item == null)
     {
         return Results.NotFound();
@@ -267,12 +390,15 @@ app.MapDelete("/items/{id}", async (int id, AppDbContext dbContext) =>
     dbContext.Items.Remove(item);
     await dbContext.SaveChangesAsync();
     return Results.NoContent();
-});
+})
+.RequireAuthorization();
 
 
+//Update storage box with {id}
 app.MapPut("/storageboxes/{id}", async (int id, HttpRequest request, AppDbContext dbContext) =>
 {
-    var box = await dbContext.StorageBoxes.FirstOrDefaultAsync(b => b.Id == id);
+    var userId = int.Parse(request.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier));
+    var box = await dbContext.StorageBoxes.FirstOrDefaultAsync(i => i.Id == id && i.UserId == userId);
     if (box == null)
     {
         return Results.NotFound();
@@ -291,20 +417,25 @@ app.MapPut("/storageboxes/{id}", async (int id, HttpRequest request, AppDbContex
     box.Name = name;
     box.Barcode = barcode;
     box.Location = location;
+    box.UserId = userId;
 
     await dbContext.SaveChangesAsync();
     return Results.Ok(box);
-});
+})
+.RequireAuthorization();
+
+
 //delete a storage box only if it does not contain any items
 
-app.MapDelete("/storageboxes/{id}", async (int id, AppDbContext dbContext) =>
+app.MapDelete("/storageboxes/{id}", async (int id, HttpRequest request, AppDbContext dbContext) =>
 {
-    var box = await dbContext.StorageBoxes.FirstOrDefaultAsync(b => b.Id == id);
+    var userId = int.Parse(request.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier));
+    var box = await dbContext.StorageBoxes.FirstOrDefaultAsync(i => i.Id == id && i.UserId == userId);
     if (box == null)
     {
         return Results.NotFound();
     }
-    var itemsInBox = await dbContext.Items.AnyAsync(i => i.Barcode == box.Barcode);
+    var itemsInBox = await dbContext.Items.Where(i => i.UserId == userId).AnyAsync(i => i.Barcode == box.Barcode);
     if (itemsInBox)
     {
         return Results.BadRequest("Cannot delete storage box that contains items.");
@@ -312,14 +443,16 @@ app.MapDelete("/storageboxes/{id}", async (int id, AppDbContext dbContext) =>
     dbContext.StorageBoxes.Remove(box);
     await dbContext.SaveChangesAsync();
     return Results.NoContent();
-});
+})
+.RequireAuthorization();
 
 
 //get items by storage box barcode
 app.MapGet("/storageboxes/{id}/items", async (int id, HttpRequest request, AppDbContext dbContext) =>
 {
-    var box = await dbContext.StorageBoxes.FirstOrDefaultAsync(b => b.Id == id);
-    var items = await dbContext.Items.Where(i => i.Barcode == box.Barcode).ToListAsync();
+    var userId = int.Parse(request.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier));
+    var box = await dbContext.StorageBoxes.FirstOrDefaultAsync(i => i.Id == id && i.UserId == userId);
+    var items = await dbContext.Items.Where(i => i.UserId == userId && i.Barcode == box.Barcode).ToListAsync();
 
     var baseUrl = $"{request.Scheme}://{request.Host}";
     var itemsWithFullImageUrl = items.Select(i => new Item
@@ -328,7 +461,8 @@ app.MapGet("/storageboxes/{id}/items", async (int id, HttpRequest request, AppDb
         Name = i.Name,
         Tag = i.Tag,
         Barcode = i.Barcode,
-        ImageUrl = $"{baseUrl}/images/{i.ImageUrl}"
+        ImageUrl = $"{baseUrl}/images/{i.ImageUrl}",
+        UserId = i.UserId
     }).ToList();
 
     var result = new
@@ -341,7 +475,8 @@ app.MapGet("/storageboxes/{id}/items", async (int id, HttpRequest request, AppDb
     };
 
     return Results.Ok(result);
-}).WithName("GetItemsByStorageBoxBarcode");
+}).WithName("GetItemsByStorageBoxBarcode")
+.RequireAuthorization();
 
 app.Run();
 
