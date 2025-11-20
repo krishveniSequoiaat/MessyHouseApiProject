@@ -29,6 +29,23 @@
                             <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
                         </li>
                     </ul>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown"
+                                role="button" data-bs-toggle="dropdown" aria-expanded="false" style="cursor:pointer;">
+                                <i class="fa-solid fa-user-circle fa-lg me-2"></i>
+                                <span id="loggedUser" class="fw-bold"></span>
+                            </a>
+
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li>
+                                    <a class="dropdown-item" href="#" id="logoutBtn">
+                                        <i class="fa-solid fa-right-from-bracket me-2"></i> Logout
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </nav>
@@ -49,6 +66,53 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    <script>
+        // apply JWT token to EVERY ajax request
+        $.ajaxSetup({
+            beforeSend: function (xhr) {
+                const token = localStorage.getItem("jwtToken");
+                if (token) {
+                    xhr.setRequestHeader("Authorization", "Bearer " + token);
+                }
+            }
+        });
+    </script>
+    <script>
+        $(document).ready(function () {
+
+            let username = localStorage.getItem("username");
+            let path = window.location.pathname.toLowerCase();
+
+            // hide user dropdown on login or register pages
+            if (path.includes("login") || path.includes("register")) {
+                $("#userDropdown").closest("li").hide();
+                return;
+            }
+
+            // normal behavior for all other pages
+            if (username) {
+                $("#loggedUser").text(username);
+            } else {
+                // no username but trying to access inner pages
+                window.location.href = "/Login";
+            }
+
+
+            // Logout click handler
+            $("#logoutBtn").on("click", function (e) {
+                e.preventDefault();
+
+                // Clear token + username
+                localStorage.removeItem("jwtToken");
+                localStorage.removeItem("username");
+
+                // Redirect to login page
+                window.location.href = "/Login";
+            });
+
+        });
+
+    </script>
 </body>
 
 </html>

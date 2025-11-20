@@ -16,16 +16,23 @@
                 </div>
 
                 <hr />
-                <div class="table-responsive" style="max-height:300px; overflow-y: auto">
-                    <table class="table table-sm table-striped align-middle" id="itemsTable">
+                <div id="emptyItemsMessage" class="text-center text-muted py-4" style="display:none;">
+                    <i class="fa-solid fa-box-open fa-3x mb-3"></i>
+                    <h5 class="fw-bold">No items added yet</h5>
+                    <p>Add items to this storage box to start organizing!</p>
+                </div>
+
+                <div id="itemsTableContainer" class="table-responsive" style="max-height:300px; overflow-y: auto">
+                    <table class="table table-sm table-striped align-middle" id="itemsTable_view">
                         <thead class="table-light">
                             <tr>
                                 <th>Name</th>
                                 <th>Tag</th>
                                 <th>Image</th>
+                                <th></th>
                             </tr>
                         </thead>
-                        <tbody id="itemsTableBody">
+                        <tbody id="itemsTableBody_view">
                         </tbody>
                     </table>
                 </div>

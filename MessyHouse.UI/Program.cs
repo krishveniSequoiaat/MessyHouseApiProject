@@ -27,4 +27,6 @@ app.UseAuthorization();
 
 app.MapRazorPages();
 
+app.MapGet("/", () => Results.Redirect("/Login"));
+
 app.Run();

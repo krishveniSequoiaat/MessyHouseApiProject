@@ -12,6 +12,7 @@ namespace MessyHouseAPIProject.Data
 
         public DbSet<Item> Items { get; set; }
         public DbSet<StorageBox> StorageBoxes { get; set; }
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -35,6 +36,14 @@ namespace MessyHouseAPIProject.Data
                 .WithMany()
                 .HasPrincipalKey(b => b.Barcode)
                 .HasForeignKey(i => i.Barcode);
+
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Username)
+                .IsUnique();
+
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
 
         }
     }
