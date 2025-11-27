@@ -25,12 +25,12 @@ public class ItemAPITests : IClassFixture<CustomWebApplicationFactory>
             db.Database.EnsureCreated();
             db.SaveChanges();
             db.StorageBoxes.AddRange(
-                new StorageBox { Name = "Box1", Barcode = "987654321012", Location = "Location1" },
-                new StorageBox { Name = "Box2", Barcode = "123456789012", Location = "Location2" }
+                new StorageBox { Name = "Box1", Barcode = "987654321012", Location = "Location1", UserId = 1 },
+                new StorageBox { Name = "Box2", Barcode = "123456789012", Location = "Location2", UserId = 2 }
             );
             db.Items.AddRange(
-                new Item { Name = "TestItem1", ImageUrl = "ImageUrl1", Tag = "tag1", Barcode = "987654321012" },
-                new Item { Name = "TestItem2", ImageUrl = "ImageUrl2", Tag = "tag2", Barcode = "123456789012" }
+                new Item { Name = "TestItem1", ImageUrl = "ImageUrl1", Tag = "tag1", Barcode = "987654321012", UserId = 1 },
+                new Item { Name = "TestItem2", ImageUrl = "ImageUrl2", Tag = "tag2", Barcode = "123456789012", UserId = 2 }
             );
             db.SaveChanges();
         }
